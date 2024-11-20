@@ -1,0 +1,96 @@
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local enabled = false
+local holdingQ = false
+local lungeDistance = 300
+local lungeSpeed = 1000
+local trailLifetime = 1.5
+local trailColor = Color3.fromRGB(50, 205, 50)
+local overlayGui
+
+local function createOverlay()
+    if overlayGui then overlayGui:Destroy() end
+    overlayGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+    local overlayFrame = Instance.new("Frame", overlayGui)
+    overlayFrame.Size = UDim2.new(1, 0, 1, 0)
+    overlayFrame.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+    overlayFrame.BackgroundTransparency = 1
+    overlayFrame.Name = "Overlay"
+    return overlayFrame
+end
+
+local function updateOverlay(enabled)
+    if not overlayGui then createOverlay() end
+    local overlayFrame = overlayGui:FindFirstChild("Overlay")
+    if not overlayFrame then return end
+
+    local targetTransparency = enabled and 0.8 or 1
+    local tween = TweenService:Create(overlayFrame, TweenInfo.new(1), {BackgroundTransparency = targetTransparency})
+    tween:Play()
+end
+
+local function createTrail(startPos, endPos)
+    local trailPart = Instance.new("Part")
+    trailPart.Anchored = true
+    trailPart.CanCollide = false
+    trailPart.Size = Vector3.new(2, 2, (startPos - endPos).Magnitude)
+    trailPart.CFrame = CFrame.new((startPos + endPos) / 2, endPos)
+    trailPart.Color = trailColor
+    trailPart.Material = Enum.Material.Neon
+    trailPart.Parent = workspace
+
+    local fadeOut = TweenService:Create(trailPart, TweenInfo.new(trailLifetime), {Transparency = 1})
+    fadeOut:Play()
+    fadeOut.Completed:Connect(function()
+        trailPart:Destroy()
+    end)
+end
+
+UIS.InputBegan:Connect(function(input)
+    if not enabled then return end
+    if input.KeyCode == Enum.KeyCode.Q and not holdingQ then
+        holdingQ = true
+
+        task.delay(0.5, function()
+            if holdingQ then
+                local character = player.Character or player.CharacterAdded:Wait()
+                local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+                local camera = workspace.CurrentCamera
+                local startPosition = humanoidRootPart.Position
+                local lookDirection = camera.CFrame.LookVector
+                local targetPosition = startPosition + (lookDirection * lungeDistance)
+
+                local startTime = tick()
+                while (tick() - startTime < lungeDistance / lungeSpeed) and holdingQ do
+                    humanoidRootPart.CFrame = humanoidRootPart.CFrame + lookDirection * (lungeSpeed * RunService.Heartbeat:Wait())
+                end
+
+                createTrail(startPosition, humanoidRootPart.Position)
+            end
+        end)
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Q then
+        holdingQ = false
+    end
+end)
+
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Y then
+        enabled = not enabled
+        updateOverlay(enabled)
+    end
+end)
+
+player.CharacterAdded:Connect(function()
+    enabled = false
+    updateOverlay(false)
+end)
+
+createOverlay()
