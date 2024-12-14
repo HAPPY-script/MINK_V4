@@ -94,3 +94,31 @@ player.CharacterAdded:Connect(function()
 end)
 
 createOverlay()
+
+
+--animation
+
+-- Lấy các dịch vụ cần thiết
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+
+-- Tạo animation
+local Animation = Instance.new("Animation")
+Animation.AnimationId = "rbxassetid://10122845177" -- V4 race
+
+-- Hàm phát animation
+local function playAnimationOnce()
+    local AnimationTrack = Humanoid:LoadAnimation(Animation)
+    AnimationTrack:Play()
+end
+
+-- Kiểm tra sự kiện bấm phím Y
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Y then
+        playAnimationOnce()
+    end
+end)
