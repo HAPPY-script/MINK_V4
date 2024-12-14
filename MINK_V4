@@ -102,15 +102,17 @@ createOverlay()
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Humanoid = Character:WaitForChild("Humanoid")
 
--- Tạo animation
-local Animation = Instance.new("Animation")
-Animation.AnimationId = "rbxassetid://10122845177" -- V4 race
-
--- Hàm phát animation
+-- Hàm để khởi tạo và phát animation
 local function playAnimationOnce()
+    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local Humanoid = Character:WaitForChild("Humanoid")
+    
+    -- Tạo animation
+    local Animation = Instance.new("Animation")
+    Animation.AnimationId = "rbxassetid://10122845177" -- Thay ID này bằng ID bạn muốn 
+
+    -- Tải animation và phát
     local AnimationTrack = Humanoid:LoadAnimation(Animation)
     AnimationTrack:Play()
 end
@@ -121,4 +123,15 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.Y then
         playAnimationOnce()
     end
+end)
+
+-- Đảm bảo rằng khi nhân vật hồi sinh, script sẽ tự động chạy lại
+LocalPlayer.CharacterAdded:Connect(function()
+    -- Bắt sự kiện phím Y sau khi hồi sinh
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.KeyCode == Enum.KeyCode.Y then
+            playAnimationOnce()
+        end
+    end)
 end)
